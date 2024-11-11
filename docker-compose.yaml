@@ -1,0 +1,29 @@
+name: time-series-backend
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    container_name: timescaledb
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: passteste123
+      POSTGRES_USER: user123
+      POSTGRES_DB: db123
+  
+  backend:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    container_name: backend-app
+    volumes:
+      - /app/node_modules
+    ports:
+      - 13000:3000
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

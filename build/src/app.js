@@ -1,0 +1,21 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.app = void 0;
+const cors_1 = __importDefault(require("cors"));
+const express_1 = __importDefault(require("express"));
+const index_1 = require("./routes/index");
+const product_routes_1 = __importDefault(require("./routes/product.routes"));
+const setup_routes_1 = __importDefault(require("./routes/setup.routes"));
+// import TimeSeriesSetupRoute from './routes/setup.routes';
+require("./config/database");
+exports.app = (0, express_1.default)();
+exports.app.use(express_1.default.urlencoded({ extended: true }));
+exports.app.use(express_1.default.json());
+exports.app.use(express_1.default.json({ type: 'application/vnd.api+json' }));
+exports.app.use((0, cors_1.default)());
+exports.app.use(index_1.router);
+exports.app.use('/', product_routes_1.default);
+exports.app.use('/', setup_routes_1.default);

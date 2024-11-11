@@ -1,0 +1,25 @@
+###
+
+GET http://localhost:13000/api
+
+###
+GET http://localhost:13000/
+
+###
+GET http://localhost:13000/metadata
+
+###
+POST http://localhost:13000/setup
+
+###
+DELETE http://localhost:13000/setup
+
+###
+POST http://localhost:3000/api/products 
+Content-Type: application/json
+
+{
+    "product_name": "NovoProduto",
+    "quantity": 10,
+    "price": 10.25
+}
