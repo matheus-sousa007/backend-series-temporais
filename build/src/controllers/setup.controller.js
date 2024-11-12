@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createSetup = exports.resetSetup = exports.getMetadata = void 0;
+exports.checkIfTableExists = exports.createSetup = exports.resetSetup = exports.getMetadataById = exports.getMetadata = void 0;
 const database_1 = require("../config/database");
+const utils_1 = require("../utils");
 const createMetadata = async () => {
     try {
-        await database_1.db.query("CREATE TABLE IF NOT EXISTS Metadata (SERCODIGO VARCHAR(50) PRIMARY KEY, SERNOME VARCHAR(255), SERCOMENTARIO VARCHAR(10000), SERATUALIZACAO TIMESTAMP, BASNOME VARCHAR(255), FNTSIGLA VARCHAR(50), FNTNOME VARCHAR(255), FNTURL VARCHAR(255), PERNOME VARCHAR(255), UNINOME VARCHAR(255), MULNOME VARCHAR(255), SERSTATUS VARCHAR(100), TEMCODIGO INTEGER, PAICODIGO VARCHAR(50), SERNUMERICA BOOLEAN)");
+        await database_1.db.query("CREATE TABLE IF NOT EXISTS Metadata (SERCODIGO VARCHAR(50) PRIMARY KEY, SERNOME VARCHAR(255), SERCOMENTARIO VARCHAR(10000), SERATUALIZACAO TIMESTAMPTZ, BASNOME VARCHAR(255), FNTSIGLA VARCHAR(50), FNTNOME VARCHAR(255), FNTURL VARCHAR(255), PERNOME VARCHAR(255), UNINOME VARCHAR(255), MULNOME VARCHAR(255), SERSTATUS VARCHAR(100), TEMCODIGO INTEGER, PAICODIGO VARCHAR(50), SERNUMERICA BOOLEAN)");
         console.log("Table Metadata created successfully!");
     }
     catch (err) {
@@ -34,6 +35,70 @@ const insertMetadata = async () => {
         console.log(`Erro ao inserir os metadados: ${err}`);
     }
 };
+const createHypertables = async () => {
+    try {
+        const { rows } = await database_1.db.query('SELECT * FROM Metadata');
+        // console.log(rows[0])
+        for (const metadata of rows) {
+            console.log('a' + metadata['sercodigo'] + '_');
+            await database_1.db.query(`CREATE TABLE IF NOT EXISTS ${'a' + metadata['sercodigo'] + '_'} (VALDATA TIMESTAMPTZ NOT NULL, YEAR INTEGER NOT NULL, MONTH INTEGER NOT NULL, DAY INTEGER NOT NULL, HOUR INTEGER NOT NULL, MINUTES INTEGER NOT NULL, SECONDS INTEGER NOT NULL, VALVALOR NUMERIC(20,8), NIVNOME TEXT, TERCODIGO TEXT)`);
+            console.log("Tabela criada!");
+            await database_1.db.query(`SELECT create_hypertable('${'a' + metadata['sercodigo'] + '_'}', 'valdata', if_not_exists => true);`);
+            console.log("Hipertabela criada!");
+        }
+        console.log("Hypertables created successfully!");
+    }
+    catch (err) {
+        console.error("Error while creating hypertables: ", err);
+    }
+};
+const deleteHypertables = async () => {
+    try {
+        const { rows } = await database_1.db.query('SELECT * FROM Metadata');
+        for (const metadata of rows) {
+            await database_1.db.query(`DROP TABLE IF EXISTS ${'a' + metadata['sercodigo'] + '_'}`);
+        }
+        console.log("Hipertabelas deletadas!");
+    }
+    catch (err) {
+        console.error("Erro durante drop das hipertabelas: ", err);
+    }
+};
+const insertTimeSeriesData = async (time_series_code) => {
+    try {
+        const res = await fetch(`http://www.ipeadata.gov.br/api/odata4/Metadados('${time_series_code.slice(1, -1)}')/Valores`);
+        const resjson = await res.json();
+        const data = resjson['value'];
+        for (const line of data) {
+            const time_split = (0, utils_1.splitTimestamp)(line['VALDATA']);
+            await database_1.db.query(`INSERT INTO ${'a' + time_series_code.toLowerCase() + '_'} VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`, [line['VALDATA'], time_split['year'], time_split['month'], time_split['day'], time_split['hour'], time_split['minutes'], time_split['seconds'], line['VALVALOR'], line['NIVNOME'] === '' ? undefined : line['NIVNOME'], line['TERCODIGO'] === '' ? undefined : line['TERCODIGO']]);
+        }
+    }
+    catch (err) {
+        console.error(`Erro ao inserir a série ${time_series_code}: ${err}`);
+        return false;
+    }
+    return true;
+};
+const insertAllTimeSeriesData = async () => {
+    let series = 0;
+    try {
+        const { rows } = await database_1.db.query('SELECT * FROM Metadata');
+        for (const metadata of rows) {
+            while (!await insertTimeSeriesData(metadata['sercodigo'])) {
+                console.log("Tentando denovo!");
+            }
+            ;
+            series += 1;
+            if (series % 25 === 0)
+                console.log(`Quantidade de séries inseridas: ${series}`);
+        }
+        console.log("Todas as linhas foram inseridas com sucesso!");
+    }
+    catch (err) {
+        console.error(`Não foi possível inserir todas as séries: ${err}`);
+    }
+};
 const getMetadata = async (req, res) => {
     try {
         const data = await database_1.db.query('SELECT * FROM Metadata');
@@ -50,8 +115,27 @@ const getMetadata = async (req, res) => {
     }
 };
 exports.getMetadata = getMetadata;
+const getMetadataById = async (req, res) => {
+    const searchParams = new URLSearchParams(req.params);
+    const codename = searchParams.get('id');
+    try {
+        const { rows } = await database_1.db.query("SELECT * FROM Metadata WHERE sercodigo = $1", [codename]);
+        res.status(200).send({
+            "message": "Metadata got successfully!",
+            "metadata": rows
+        });
+    }
+    catch (err) {
+        res.status(500).send({
+            "message": "Error while getting metadata!",
+            "error": err
+        });
+    }
+};
+exports.getMetadataById = getMetadataById;
 const resetSetup = async (req, res) => {
     try {
+        await deleteHypertables();
         await deleteMetadata();
         res.status(200).send({
             "message": "Setup deleted successfully!"
@@ -65,24 +149,13 @@ const resetSetup = async (req, res) => {
     }
 };
 exports.resetSetup = resetSetup;
-const createHypertables = async () => {
-    try {
-        const all_metadata = await database_1.db.query('SELECT * FROM Metadata');
-        for (const metadata of all_metadata) {
-            await database_1.db.query(`CREATE TABLE IF NOT EXISTS ${metadata['SERNOME']} (VALDATA TIMESTAMP PRIMARY KEY, VALVALOR NUMERIC(20,8))`);
-            await database_1.db.query(`SELECT create_hypertable('${metadata['SERNOME']}', 'VALDATA', if_not_exists => true)`);
-        }
-        console.log("Hypertables created successfully!");
-    }
-    catch (err) {
-        console.log("Error while creating hypertables: ", err);
-    }
-};
 const createSetup = async (req, res) => {
     try {
+        await database_1.db.query('CREATE EXTENSION IF NOT EXISTS timescaledb;');
         await createMetadata();
         await insertMetadata();
-        await createHypertables(req, res);
+        await createHypertables();
+        await insertAllTimeSeriesData();
         res.status(201).send({
             "message": "Setup criado com sucesso!"
         });
@@ -95,3 +168,21 @@ const createSetup = async (req, res) => {
     }
 };
 exports.createSetup = createSetup;
+const checkIfTableExists = async (req, res) => {
+    const searchParams = new URLSearchParams(req.params);
+    const tablename = searchParams.get('tablename');
+    try {
+        const { rows } = await database_1.db.query("SELECT hypertable_name FROM timescaledb_information.hypertables WHERE hypertable_name = $1", ['a' + tablename.toLowerCase() + '_']);
+        res.status(200).send({
+            "message": `Information Schema got successfully!`,
+            "rows": rows
+        });
+    }
+    catch (err) {
+        res.status(500).send({
+            "message": "Error while getting information schema!",
+            "error": err
+        });
+    }
+};
+exports.checkIfTableExists = checkIfTableExists;

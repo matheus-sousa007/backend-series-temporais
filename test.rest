@@ -9,12 +9,6 @@ GET http://localhost:13000/
 GET http://localhost:13000/metadata
 
 ###
-POST http://localhost:13000/setup
-
-###
-DELETE http://localhost:13000/setup
-
-###
 POST http://localhost:3000/api/products 
 Content-Type: application/json
 
@@ -23,3 +17,15 @@ Content-Type: application/json
     "quantity": 10,
     "price": 10.25
 }
+
+###
+GET http://localhost:13000/metadata/SCN10_VAITP10
+
+###
+GET http://localhost:13000/time-series/SCN10_VAITP10
+
+###
+GET http://localhost:13000/time-series/DINVESTE
+
+###
+GET http://localhost:13000/schema/DINVESTE

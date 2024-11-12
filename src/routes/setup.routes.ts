@@ -3,13 +3,17 @@ import { Router } from 'express';
 import {
     createSetup,
     resetSetup,
-    getMetadata
+    getMetadata,
+    getMetadataById,
+    checkIfTableExists
 } from '../controllers/setup.controller'
 
 const router = Router();
 
-router.post('/setup', createSetup);
+router.get('/setup', createSetup);
 router.delete('/setup', resetSetup);
 router.get('/metadata', getMetadata);
+router.get('/metadata/:id', getMetadataById);
+router.get('/schema/:tablename', checkIfTableExists)
 
 export default router;
