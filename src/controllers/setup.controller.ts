@@ -49,9 +49,11 @@ const createHypertables = async () => {
             console.log("Hipertabela criada!")
         }
 
+        // console.log("Tables created successfully!")
         console.log("Hypertables created successfully!");
     } catch(err) {
         console.error("Error while creating hypertables: ", err)
+        // console.error("Error while creating tables: ", err)
     }
 }
 
@@ -62,8 +64,10 @@ const deleteHypertables = async () => {
             await db.query(`DROP TABLE IF EXISTS ${'a' + metadata['sercodigo'] + '_'}`)
         }
         console.log("Hipertabelas deletadas!")
+        // console.log("Tabelas deletadas!")
     } catch(err) {
         console.error("Erro durante drop das hipertabelas: ", err)
+        // console.error("Erro durante drop das tabelas: ", err)
     }
 }
 

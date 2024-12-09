@@ -29,3 +29,6 @@ GET http://localhost:13000/time-series/DINVESTE
 
 ###
 GET http://localhost:13000/schema/DINVESTE
+
+###
+GET http://localhost:13000/api

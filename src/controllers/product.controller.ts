@@ -1,4 +1,5 @@
 import {db} from '../config/database';
+import express from "express";
 
 export const createProduct = async (req: any, res: any) => {
     const { product_name, quantity, price } = req.body;
@@ -96,4 +97,10 @@ export const deleteProductById = async (req: any, res: any) => {
     const id = searchParams.get('id');
 
     
+}
+
+export const teste = async (req: express.Request, res: express.Response) => {
+    res.status(200).send({
+        message: "Server funcionando com sucesso!",
+    })
 }

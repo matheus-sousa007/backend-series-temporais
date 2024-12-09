@@ -1,17 +1,22 @@
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '.env.local'});
+// dotenv.config({ path: '.env.local'});
 
-const admin = process.env.POSTGRES_ADMIN;
-const user = process.env.POSTGRES_USER;
-const password = process.env.POSTGRES_PASSWORD;
-const database = process.env.POSTGRES_DB;
-const db_port = process.env.POSTGRES_DB_PORT;
-const host = process.env.POSTGRES_HOST;
+// const admin = process.env.POSTGRES_ADMIN || "postgres";
+// const user = process.env.POSTGRES_USER || "postgres";
+// const password = process.env.POSTGRES_PASSWORD;
+// const database = process.env.POSTGRES_DB;
+// const db_port = process.env.POSTGRES_DB_PORT || 5432;
+// const host = process.env.POSTGRES_HOST || "postgres";
 
-const connectionString = `${admin}://${user}:${password}@${host}:${db_port}/${database}`
+// const connectionString = `${admin}://${user}:${password}@${host}:${db_port}/${database}`
 
+const connectionString = process.env.DATABASE_URL
+
+console.log(`Connection string: ${connectionString}`)
+
+console.log(`All environment variables: ${JSON.stringify(process.env)}`)
 
 const pool = new Pool({
     connectionString:  connectionString
