@@ -8,9 +8,9 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     environment:
-      POSTGRES_PASSWORD: passteste123
-      POSTGRES_USER: user123
-      POSTGRES_DB: db123
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
   
   backend:
     build:
@@ -22,8 +22,15 @@ services:
       - /app/node_modules
     ports:
       - 13000:3000
+    links:
+      - db
     depends_on:
       - db
+    environment:
+      DB_HOST: ${DATABASE_HOST}
+      DB_USER: ${DATABASE_USER}
+      DB_PASS: ${DATABASE_PASSWORD}
+      DB_NAME: ${DATABASE_NAME}
 
 volumes:
   pgdata:

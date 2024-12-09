@@ -6,8 +6,6 @@
   "scripts": {
     "clean": "rimraf ./build",
     "build": "npm run clean && tsc",
-    "start": "node ./build/server.js",
-    "dev": "nodemon",
     "local": "ts-node ./build/server.js",
     "lint": "eslint --ext .js,.html -f ./node_modules/eslint-friendly-formatter . --fix",
     "prepush": "npm run lint",

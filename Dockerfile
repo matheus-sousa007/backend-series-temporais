@@ -13,10 +13,11 @@ RUN npm install
 # Copy source code
 COPY . .
 
+# Exposing port to be accessible within the container
 EXPOSE 3000
-# Command to run application
 
-
+# Building the application
 RUN npm run build
 
+# Running application
 CMD ["npm", "run", "local"]
